@@ -18,5 +18,6 @@ function parseOptions(options) {
 }
 
 function parsePeerflixArgs(options) {
-    return parseArgs(options).split(' ');
+    return parseArgs.makeString(options).split(' ');
+}
 }

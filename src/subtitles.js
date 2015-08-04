@@ -1,18 +1,19 @@
 var os = require('os');
 var path = require('path');
+var spawnSync = require('child_process').spawnSync;
 var execSync = require('child_process').execSync;
 var defaults = require('lodash.defaults');
 var parseArgs = require('./parse-args.js');
 
 module.exports = function getSubtitles(torrentName, subliminalArguments, options) {
     var opts = parseOptions(options);
-    var subliminalArgumentsString = parseSubliminalArgs(subliminalArguments);
+    var subliminalArgs = parseSubliminalArgs(subliminalArguments);
 
     if (opts.verbose) {
         console.log("Trying to download subtitles...");
     }
 
-    if (!downloadSubtitlesFile(torrentName, subliminalArgumentsString, opts)) {
+    if (!downloadSubtitlesFile(torrentName, subliminalArgs, opts)) {
         return '';
     }
 
@@ -37,15 +38,16 @@ function parseOptions(options) {
 }
 
 function parseSubliminalArgs(options) {
-    var subliminalArguments = parseArgs(options);
-    return '-s ' + subliminalArguments;
+    var subliminalArguments = parseArgs.makeString(options);
+    return ('-s ' + subliminalArguments).split(' ');
 }
 
 function downloadSubtitlesFile(torrentName, subliminalArguments, options) {
     var opts = parseOptions(options);
-    var subliminalCommand = [opts.bin, 'download', subliminalArguments, "\"" + torrentName + "\""].join(' ');
+    subliminalArguments.unshift('download');
+    subliminalArguments.push(torrentName);
     try {
-        execSync(subliminalCommand, { cwd: opts.tmpDir });
+        spawnSync(opts.bin, subliminalArguments, { cwd: opts.tmpDir, stdio: 'inherit' });
     } catch (e) {
         console.log("Error when executing subliminal: " + e.message);
         return false;

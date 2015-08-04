@@ -1,15 +1,13 @@
 #!/usr/bin/env node
-var args = require('minimist')(process.argv.slice(2));
-var defaults = require('lodash.defaults');
 var search = require('./src/search.js');
 var view = require('./src/view.js');
 var player = require('./src/peerflix.js');
 var getSubtitles = require('./src/subtitles.js');
+var parseArgs = require('./src/parse-args.js');
 
-defaults(args, {
-    player: 'omx',
-    verbose: true
-});
+var args = require('minimist')(process.argv.slice(2));
+args.peerflix = parseArgs.makeObject(args.peerflix || '--omx');
+args.subliminal = parseArgs.makeObject(args.subliminal || '--language fr');
 
 
 
@@ -33,8 +31,8 @@ function listTorrents(torrents) {
 }
 
 function playVideo(torrent) {
-    var subtitles = getSubtitles(torrent.title, { 'language': 'fr' }, { verbose: args.verbose });
-    var options = {};
+    var subtitles = getSubtitles(torrent.title, args.subliminal);
+    var options = args.peerflix;
 
     if (subtitles) {
         options.subtitles = "\"" + subtitles + "\"";

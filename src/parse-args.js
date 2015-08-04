@@ -1,4 +1,6 @@
-module.exports = function parseArgs(options) {
+var minimist = require('minimist');
+
+module.exports.makeString = function makeString(options) {
     if (!options) {
         return '';
     }
@@ -11,4 +13,16 @@ module.exports = function parseArgs(options) {
         }
     }
     return args.join(' ').trim();
+};
+
+module.exports.makeObject = function makeObject(args) {
+    if (!args) {
+        return {};
+    }
+    if (typeof args === "string") {
+        args = args.split(' ');
+    }
+    var options = minimist(args);
+    delete options._;
+    return options;
 };
