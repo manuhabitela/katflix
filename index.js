@@ -3,6 +3,7 @@ var view = require('./src/view.js');
 var player = require('./src/peerflix.js');
 var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
+var Q = require('q');
 
 var args = require('minimist')(process.argv.slice(2));
 args.peerflix = parseArgs.makeObject(args.peerflix || '');
@@ -12,34 +13,40 @@ if (args.help) {
     return help();
 }
 
-return start();
+return start(args._[0]);
 
 function help() {
     console.log([
         'Search videos from kickasstorrents, watch them directly thanks to peerflix,',
         'with subtitles downloaded through subliminal.',
         '',
-        'Usage: katflix [options]',
+        'Usage: katflix [OPTIONS] [QUERY]',
+        '',
+        'QUERY is your search terms to find the torrents you want.',
+        'If you don\'t put it here, katflix will ask you about it when starting.',
         '',
         'Options:',
         '  --peerflix: options to pass to the peerflix executable',
         '  --subliminal: options to pass to the subliminal executable',
         '',
-        'Example:',
+        'Examples:',
         '  `katflix --peerflix="--vlc" --subliminal="--language fr"`',
+        '  `katflix --peerflix="--omx" Drive`',
         '',
         'The subliminal/language option is required if you want subtitles.'
     ].join('\n'));
 }
 
-function start() {
-    view.inputSearchTerms()
+function start(searchTerms) {
+    var waitForQuery = searchTerms ? Q(searchTerms) : view.inputSearchTerms();
+    waitForQuery
         .then(search)
         .then(listTorrents, view.renderError);
 }
 
 function listTorrents(torrents) {
     if (!torrents.length) {
+        view.renderWarning('No videos found.');
         return start();
     }
 
@@ -57,10 +64,5 @@ function playVideo(torrent) {
         options.subtitles = "\"" + subtitles + "\"";
     }
 
-    if (args.player) {
-        options[args.player] = true;
-    }
-
     player.play(torrent.torrentLink, options);
 }
-

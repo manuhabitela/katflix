@@ -32,9 +32,12 @@ See all the help you need with `katflix --help`.
 
 There are mostly two options: `--subliminal` and `--peerflix`. Both of these are used to pass options to subliminal and peerflix.
 
-### Example
+### Examples
 
 ```bash
 # katflix will play the video in vlc and will try to download french subtitles for the selected video
 katflix --peerflix="--vlc" --subliminal="--language fr"
+
+# katflix will directly list the torrents matching 'Drive' and autoplay in omx (a raspberry pi player)
+katflix --peerflix="--omx" Drive
 ```

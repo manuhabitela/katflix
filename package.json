@@ -1,6 +1,6 @@
 {
   "name": "katflix",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "cli app to search and watch torrents from kickasstorrents. Extremely similar to torrentflix.",
   "main": "index.js",
   "scripts": {

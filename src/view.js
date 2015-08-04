@@ -58,6 +58,10 @@ module.exports.selectVideo = function selectVideo(torrents) {
 };
 
 
-module.exports.renderError = function renderError(errorMessage) {
-    console.log(chalk.red.bold(errorMessage));
+module.exports.renderWarning = function renderWarning(message) {
+    console.log(chalk.yellow.bold(message));
+};
+
+module.exports.renderError = function renderError(message) {
+    console.log(chalk.red.bold(message));
 };
