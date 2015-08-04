@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 var search = require('./src/search.js');
 var view = require('./src/view.js');
 var player = require('./src/peerflix.js');
@@ -9,9 +8,29 @@ var args = require('minimist')(process.argv.slice(2));
 args.peerflix = parseArgs.makeObject(args.peerflix || '--omx');
 args.subliminal = parseArgs.makeObject(args.subliminal || '--language fr');
 
+if (args.help) {
+    return help();
+}
 
+return start();
 
-start();
+function help() {
+    console.log([
+        'Search videos from kickasstorrents, watch them directly thanks to peerflix,',
+        'with subtitles downloaded through subliminal.',
+        '',
+        'Usage: katflix [options]',
+        '',
+        'Options:',
+        '  --peerflix: options to pass to the peerflix executable',
+        '  --subliminal: options to pass to the subliminal executable',
+        '',
+        'Example:',
+        '  `katflix --peerflix="--vlc" --subliminal="--language fr"`',
+        '',
+        'The subliminal/language option is required if you want subtitles.'
+    ].join('\n'));
+}
 
 function start() {
     view.inputSearchTerms()
