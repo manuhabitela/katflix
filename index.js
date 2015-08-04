@@ -5,8 +5,8 @@ var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
 
 var args = require('minimist')(process.argv.slice(2));
-args.peerflix = parseArgs.makeObject(args.peerflix || '--omx');
-args.subliminal = parseArgs.makeObject(args.subliminal || '--language fr');
+args.peerflix = parseArgs.makeObject(args.peerflix || '');
+args.subliminal = parseArgs.makeObject(args.subliminal || '');
 
 if (args.help) {
     return help();

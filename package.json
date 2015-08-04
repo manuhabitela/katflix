@@ -1,7 +1,7 @@
 {
   "name": "katflix",
-  "version": "1.0.0",
-  "description": "Kinda like the torrentflix package but different",
+  "version": "1.0.1",
+  "description": "cli app to search and watch torrents from kickasstorrents. Extremely similar to torrentflix.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
