@@ -6,6 +6,10 @@ var defaults = require('lodash.defaults');
 var parseArgs = require('./parse-args.js');
 
 module.exports = function getSubtitles(torrentName, subliminalArguments, options) {
+    if (!subliminalArguments.language) {
+        return false;
+    }
+
     var opts = parseOptions(options);
     var subliminalArgs = parseSubliminalArgs(subliminalArguments);
 
