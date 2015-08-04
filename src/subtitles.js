@@ -1,0 +1,71 @@
+var os = require('os');
+var path = require('path');
+var execSync = require('child_process').execSync;
+var defaults = require('lodash.defaults');
+var parseArgs = require('./parse-args.js');
+
+module.exports = function getSubtitles(torrentName, subliminalArguments, options) {
+    var opts = parseOptions(options);
+    var subliminalArgumentsString = parseSubliminalArgs(subliminalArguments);
+
+    if (opts.verbose) {
+        console.log("Trying to download subtitles...");
+    }
+
+    if (!downloadSubtitlesFile(torrentName, subliminalArgumentsString, opts)) {
+        return '';
+    }
+
+    var subtitlesFile = retrieveSubtitlesFile(opts.tmpDir);
+
+    if (opts.verbose && subtitlesFile.length) {
+        console.log("Found (hopefully) matching subtitles.");
+    }
+
+    if (opts.verbose && !subtitlesFile.length) {
+        console.log("Didn't find any matching subtitles. Sorry :|");
+    }
+    return subtitlesFile;
+};
+
+function parseOptions(options) {
+    return defaults(options || {}, {
+        tmpDir: os.tmpdir(),
+        bin: "subliminal",
+        verbose: true
+    });
+}
+
+function parseSubliminalArgs(options) {
+    var subliminalArguments = parseArgs(options);
+    return '-s ' + subliminalArguments;
+}
+
+function downloadSubtitlesFile(torrentName, subliminalArguments, options) {
+    var opts = parseOptions(options);
+    var subliminalCommand = [opts.bin, 'download', subliminalArguments, "\"" + torrentName + "\""].join(' ');
+    try {
+        execSync(subliminalCommand, { cwd: opts.tmpDir });
+    } catch (e) {
+        console.log("Error when executing subliminal: " + e.message);
+        return false;
+    }
+    return true;
+}
+
+function retrieveSubtitlesFile(dir) {
+    //we assume the file created by subliminal is the last .srt file in the given dir
+    //we get all the srt files in the temp dir and keep the last created
+    //we might need to do better than this... but I find no sure way of getting the
+    //specific file created by subliminal directly
+    var files;
+    try {
+        files = execSync('ls -1At *.srt', { cwd: dir, encoding: 'utf8' }).trim();
+    } catch (e) {
+        console.log("Error when trying to retrieve subtitle file: " + e.message);
+        return '';
+    }
+    files = files.split('\n'); //each file is on its own line (-1 option of ls) so we split by newline
+    var filename = files[0]; //ls is ordered by modification time (-i option) so we get the first file of list
+    return path.join(dir, filename);
+}
