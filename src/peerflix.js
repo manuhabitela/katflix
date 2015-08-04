@@ -1,6 +1,7 @@
 var spawn = require('child_process').spawn;
 var path = require('path');
 var execSync = require('child_process').execSync;
+var binPath = require('bin-path')(require);
 var defaults = require('lodash.defaults');
 var parseArgs = require('./parse-args.js');
 module.exports = {};
@@ -24,12 +25,6 @@ function parsePeerflixArgs(options) {
 }
 
 function getPeerflixBin() {
-    var binPath;
-    try {
-        binPath = execSync('npm bin', { encoding: 'utf8' }).trim();
-    } catch (e) {
-        console.log("Error when getting peerflix executable: " + e.message);
-        return false;
-    }
-    return path.join(binPath, 'peerflix');
+    var peerflix = binPath('peerflix');
+    return peerflix.peerflix;
 }
