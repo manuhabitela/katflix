@@ -9,9 +9,7 @@ module.exports = function getSubtitles(torrentName, subliminalArguments, options
     var opts = parseOptions(options);
     var subliminalArgs = parseSubliminalArgs(subliminalArguments);
 
-    if (opts.verbose) {
-        console.log("Trying to download subtitles...");
-    }
+    console.log("Trying to download subtitles...");
 
     if (!downloadSubtitlesFile(torrentName, subliminalArgs, opts)) {
         return '';
@@ -19,21 +17,18 @@ module.exports = function getSubtitles(torrentName, subliminalArguments, options
 
     var subtitlesFile = retrieveSubtitlesFile(opts.tmpDir);
 
-    if (opts.verbose && subtitlesFile.length) {
-        console.log("Found (hopefully) matching subtitles.");
-    }
+    console.log(subtitlesFile.length ?
+        "Found (hopefully) matching subtitles: " + subtitlesFile :
+        "Didn't find any matching subtitles."
+    );
 
-    if (opts.verbose && !subtitlesFile.length) {
-        console.log("Didn't find any matching subtitles. Sorry :|");
-    }
     return subtitlesFile;
 };
 
 function parseOptions(options) {
     return defaults(options || {}, {
         tmpDir: os.tmpdir(),
-        bin: "subliminal",
-        verbose: true
+        bin: "subliminal"
     });
 }
 
