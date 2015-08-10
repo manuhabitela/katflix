@@ -21,7 +21,7 @@ function parseOptions(options) {
 }
 
 function parsePeerflixArgs(options) {
-    return parseArgs.makeString(options).split(' ');
+    return parseArgs.makeArray(options);
 }
 
 function getPeerflixBin() {

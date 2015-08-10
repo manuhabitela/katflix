@@ -1,6 +1,6 @@
 var minimist = require('minimist');
 
-module.exports.makeString = function makeString(options) {
+module.exports.makeArray = function makeArray(options) {
     if (!options) {
         return '';
     }
@@ -9,10 +9,10 @@ module.exports.makeString = function makeString(options) {
         if (options[opt] === true) {
             args.push('--' + opt);
         } else if (options[opt] !== false) {
-            args.push('--' + opt + ' ' + options[opt]);
+            args.push('--' + opt, options[opt]);
         }
     }
-    return args.join(' ').trim();
+    return args;
 };
 
 module.exports.makeObject = function makeObject(args) {

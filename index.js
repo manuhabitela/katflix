@@ -71,7 +71,7 @@ function playVideo(torrent) {
     var options = args.peerflix;
 
     if (subtitles) {
-        options.subtitles = "\"" + subtitles + "\"";
+        options.subtitles = subtitles;
     }
 
     player.play(torrent.torrentLink, options);

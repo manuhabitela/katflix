@@ -37,8 +37,9 @@ function parseOptions(options) {
 }
 
 function parseSubliminalArgs(options) {
-    var subliminalArguments = parseArgs.makeString(options);
-    return ('-s ' + subliminalArguments).split(' ');
+    var subliminalArguments = parseArgs.makeArray(options);
+    subliminalArguments.push('-s');
+    return subliminalArguments;
 }
 
 function downloadSubtitlesFile(torrentName, subliminalArguments, options) {
