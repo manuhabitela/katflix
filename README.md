@@ -28,9 +28,28 @@ sudo pip install subliminal
 ## Usage
 
 Start using katflix with the `katflix` command!
-See all the help you need with `katflix --help`.
 
-There are mostly two options: `--subliminal` and `--peerflix`. Both of these are used to pass options to subliminal and peerflix.
+All the help you need is visible with `katflix --help`:
+
+```
+Search videos from kickasstorrents, watch them directly thanks to peerflix,
+with subtitles downloaded through subliminal.
+
+Usage: katflix [OPTIONS] [QUERY]
+
+QUERY is your search terms to find the torrents you want.
+If you don't put it here, katflix will ask you about it when starting.
+
+Options:
+  --peerflix: options to pass to the peerflix executable
+  --subliminal: options to pass to the subliminal executable
+
+Examples:
+  `katflix --peerflix="--vlc" --subliminal="--language fr"`
+  `katflix --peerflix="--omx" Drive`
+
+The subliminal/language option is required if you want subtitles.
+```
 
 ### Examples
 
