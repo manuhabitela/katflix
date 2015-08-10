@@ -62,3 +62,16 @@ katflix --peerflix="--vlc" --subliminal="--language fr"
 # katflix will directly list the torrents matching 'Drive' and autoplay in omx (a raspberry pi player)
 katflix --peerflix="--omx" Drive
 ```
+
+
+### Protips
+
+As katflix allows you to pass all the options you want to peerflix and subliminal without enforcing any defaults, it can be cumbersome to type the command. [Don't forget about aliases](http://raspberrypi.stackexchange.com/a/4285)!
+
+For example, on my raspberry pi, I have a `play` alias:
+
+```
+alias play="katflix --peerflix=\"-q --omx\" --subliminal=\"--language fr\""
+```
+
+I can then type `play Drive` in order to search for *Drive* torrents with french subtitles and play them directly in omxplayer.
