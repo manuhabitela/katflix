@@ -41,6 +41,8 @@ QUERY is your search terms to find the torrents you want.
 If you don't put it here, katflix will ask you about it when starting.
 
 Options:
+  --help: this message
+  --version: katflix's version
   --peerflix: options to pass to the peerflix executable
   --subliminal: options to pass to the subliminal executable
 

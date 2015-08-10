@@ -9,14 +9,22 @@ var args = require('minimist')(process.argv.slice(2));
 args.peerflix = parseArgs.makeObject(args.peerflix || '');
 args.subliminal = parseArgs.makeObject(args.subliminal || '');
 
-if (args.help) {
-    return help();
+if (args.version || args.v) {
+    return view.renderMessage(version());
+}
+
+if (args.help || args.h) {
+    return view.renderMessage(help());
 }
 
 return start(args._[0]);
 
+function version() {
+    return "katflix version " + require('./package.json').version;
+}
+
 function help() {
-    console.log([
+    return [
         'Search videos from kickasstorrents, watch them directly thanks to peerflix,',
         'with subtitles downloaded through subliminal.',
         '',
@@ -26,6 +34,8 @@ function help() {
         'If you don\'t put it here, katflix will ask you about it when starting.',
         '',
         'Options:',
+        '  --help: this message',
+        '  --version: katflix\'s version',
         '  --peerflix: options to pass to the peerflix executable',
         '  --subliminal: options to pass to the subliminal executable',
         '',
@@ -34,7 +44,7 @@ function help() {
         '  `katflix --peerflix="--omx" Drive`',
         '',
         'The subliminal/language option is required if you want subtitles.'
-    ].join('\n'));
+    ].join('\n');
 }
 
 function start(searchTerms) {

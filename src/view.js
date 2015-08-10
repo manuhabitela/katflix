@@ -65,3 +65,7 @@ module.exports.renderWarning = function renderWarning(message) {
 module.exports.renderError = function renderError(message) {
     console.log(chalk.red.bold(message));
 };
+
+module.exports.renderMessage = function renderMessage(message) {
+    console.log(message);
+};
