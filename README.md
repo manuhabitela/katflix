@@ -1,13 +1,15 @@
 # `katflix`
 
-`katflix` is command-line application to search videos from kickasstorrents and watch them instantly thanks to thanks to [peerflix](https://github.com/mafintosh/peerflix).
+`katflix` is a command-line application to search videos from kickasstorrents and watch them instantly thanks to [peerflix](https://github.com/mafintosh/peerflix).
 
 It is extremelly similar to [torrentflix](https://github.com/ItzBlitz98/torrentflix).
 Main differences are:
 
-* only search torrents from kickasstorrents (this means one less step in the user interface, yay)
+* only search torrents from kickasstorrents (this means fewer steps in the user interface, yay)
 * try to fetch subtitles with [subliminal](https://github.com/Diaoul/subliminal)
-* I just worked on this a few hours so it's certainly a good pile a crap compared to torrentflix
+* since it uses a forked version of peerflix, omxplayer keyboard shortcuts work with katflix
+
+But well I just worked on this a few hours so it's certainly still a little pile a crap compared to torrentflix.
 
 ## Installation
 
