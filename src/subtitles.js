@@ -1,5 +1,6 @@
 var os = require('os');
 var path = require('path');
+var fs = require('fs');
 var spawnSync = require('child_process').spawnSync;
 var execSync = require('child_process').execSync;
 var defaults = require('lodash.defaults');
@@ -19,7 +20,7 @@ module.exports = function getSubtitles(torrentName, subliminalArguments, options
         return '';
     }
 
-    var subtitlesFile = retrieveSubtitlesFile(opts.tmpDir);
+    var subtitlesFile = renameFileWithoutSpaces(retrieveSubtitlesFile(opts.tmpDir));
 
     console.log(subtitlesFile.length ?
         "Found (hopefully) matching subtitles: " + subtitlesFile :
@@ -70,4 +71,23 @@ function retrieveSubtitlesFile(dir) {
     files = files.split('\n'); //each file is on its own line (-1 option of ls) so we split by newline
     var filename = files[0]; //ls is ordered by modification time (-i option) so we get the first file of list
     return path.join(dir, filename);
+}
+
+/**
+ * seems the raspberry pi node have some trouble with spaces in spawn
+ *
+ * let's bypass this!
+ */
+function renameFileWithoutSpaces(sourcePath) {
+    if (!sourcePath) {
+        return '';
+    }
+    var filename = path.basename(sourcePath);
+    var dirname = path.dirname(sourcePath);
+    var newPath = path.join(dirname, filename.replace(/\s/g, '_'));
+    fs.renameSync(
+        sourcePath,
+        newPath
+    );
+    return newPath;
 }
