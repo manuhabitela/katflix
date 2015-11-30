@@ -4,7 +4,7 @@ var readableSize = require('./readable-size.js');
 
 module.exports = function search(query) {
     var deferred = Q.defer();
-    kickass(query, function(err, response) {
+    kickass({ q: query }, function(err, response) {
         if (err) {
             deferred.reject(err);
             return false;
