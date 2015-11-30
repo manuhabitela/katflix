@@ -6,7 +6,6 @@ It is extremelly similar to [torrentflix](https://github.com/ItzBlitz98/torrentf
 Main differences are:
 
 * only search torrents from kickasstorrents (this means fewer steps in the user interface, yay)
-* try to fetch subtitles with [subliminal](https://github.com/Diaoul/subliminal)
 * since it uses a forked version of peerflix, omxplayer keyboard shortcuts work with katflix
 
 But well I just worked on this a few hours so it's certainly still a little pile a crap compared to torrentflix.
@@ -17,14 +16,6 @@ But well I just worked on this a few hours so it's certainly still a little pile
 
 ```
 sudo npm install -g katflix
-```
-
-### Want subtitles?
-
-If you want katflix to automatically download matching subtitles, you need to install  [subliminal](https://github.com/Diaoul/subliminal). This is done via pip:
-
-```
-sudo pip install subliminal
 ```
 
 ## Usage
