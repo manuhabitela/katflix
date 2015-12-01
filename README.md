@@ -25,8 +25,7 @@ Start using katflix with the `katflix` command!
 All the help you need is visible with `katflix --help`:
 
 ```
-Search videos from kickasstorrents, watch them directly thanks to peerflix,
-with subtitles downloaded through subliminal.
+Search videos from kickasstorrents, watch them directly thanks to peerflix.
 
 Usage: katflix [OPTIONS] [QUERY]
 
@@ -37,10 +36,9 @@ Options:
   --help: this message
   --version: katflix's version
   --peerflix: options to pass to the peerflix executable
-  --subliminal: options to pass to the subliminal executable
 
 Examples:
-  `katflix --peerflix="--vlc" --subliminal="--language fr"`
+  `katflix --peerflix="--vlc"`
   `katflix --peerflix="--omx" Drive`
 
 The subliminal/language option is required if you want subtitles.
@@ -49,8 +47,8 @@ The subliminal/language option is required if you want subtitles.
 ### Examples
 
 ```bash
-# katflix will play the video in vlc and will try to download french subtitles for the selected video
-katflix --peerflix="--vlc" --subliminal="--language fr"
+# katflix will play the video in vlc
+katflix --peerflix="--vlc"
 
 # katflix will directly list the torrents matching 'Drive' and autoplay in omx (a raspberry pi player)
 katflix --peerflix="--omx" Drive
@@ -59,12 +57,12 @@ katflix --peerflix="--omx" Drive
 
 ### Protips
 
-As katflix allows you to pass all the options you want to peerflix and subliminal without enforcing any defaults, it can be cumbersome to type the command. [Don't forget about aliases](http://raspberrypi.stackexchange.com/a/4285)!
+As katflix allows you to pass all the options you want to peerflix without enforcing any defaults, it can be cumbersome to type the command. [Don't forget about aliases](http://raspberrypi.stackexchange.com/a/4285)!
 
 For example, on my raspberry pi, I have a `play` alias:
 
 ```
-alias play="katflix --peerflix=\"-q --omx\" --subliminal=\"--language fr\""
+alias play="katflix --peerflix=\"-q --omx\"
 ```
 
-I can then type `play Drive` in order to search for *Drive* torrents with french subtitles and play them directly in omxplayer.
+I can then type `play Drive` in order to search for *Drive* torrents and play them directly in omxplayer.
