@@ -1,6 +1,7 @@
-var search = require('./src/search.js');
+var searchTorrents = require('./src/search-torrents.js');
 var view = require('./src/view.js');
 var player = require('./src/peerflix.js');
+var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
 var Q = require('q');
 
@@ -42,10 +43,20 @@ function help() {
 }
 
 function start(searchTerms) {
-    var waitForQuery = searchTerms ? Q(searchTerms) : view.inputSearchTerms();
-    waitForQuery
-        .then(search)
-        .then(listTorrents, view.renderError);
+    var torrent = null;
+    var promise = searchTerms ? Q(searchTerms) : view.inputVideoSearchTerms();
+    promise
+        .then(searchTorrents)
+        .then(listTorrents)
+        .then(view.selectVideo)
+        .then(function(torrent) {
+            if (args.subtitles) {
+                return getSubtitles(torrent);
+            }
+            return { torrent: torrent };
+        })
+        .then(playVideo)
+        .catch(view.renderError);
 }
 
 function listTorrents(torrents) {
@@ -55,13 +66,14 @@ function listTorrents(torrents) {
     }
 
     view.renderTorrents(torrents);
-    view.selectVideo(torrents).then(
-        playVideo
-    );
+    return torrents;
 }
 
-function playVideo(torrent) {
+function playVideo(data) {
     var options = args.peerflix;
+    if (data.subtitles) {
+        options.subtitles = data.subtitles;
+    }
 
-    player.play(torrent.torrentLink, options);
+    player.play(data.torrent.torrentLink, options);
 }

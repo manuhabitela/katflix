@@ -15,11 +15,13 @@
   "dependencies": {
     "bin-path": "0.0.3",
     "chalk": "^1.1.0",
+    "gunzip-maybe": "^1.2.1",
     "inquirer": "^0.9.0",
     "kickass-torrent": "0.0.3",
     "lodash.defaults": "^3.1.2",
     "minimist": "^1.1.2",
     "peerflix": "Leimi/peerflix",
-    "q": "^1.4.1"
+    "q": "^1.4.1",
+    "subtitler": "^2.4.0"
   }
 }
