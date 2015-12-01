@@ -6,16 +6,21 @@ var http = require('http');
 var os = require('os');
 var view = require('./view.js');
 
-module.exports = function subtitles(torrent) {
+module.exports = function subtitles(originalData) {
     var deferred = Q.defer();
 
-    waitForSubtitlesInput(torrent)
-        .then(fetchSubtitles)
+    waitForSubtitlesInput(originalData.torrent)
+        .then(function(dataAfterInput) {
+            if (!dataAfterInput.subtitles) {
+                return deferred.resolve(originalData);
+            }
+            return fetchSubtitles(dataAfterInput);
+        })
         .then(view.renderSubtitles)
         .then(view.selectSubtitles)
         .then(downloadSubtitles)
-        .then(function(data) {
-            return deferred.resolve(data);
+        .then(function(finalData) {
+            return deferred.resolve(finalData);
         });
 
     return deferred.promise;
@@ -24,12 +29,12 @@ module.exports = function subtitles(torrent) {
 function waitForSubtitlesInput(torrent) {
     var deferred = Q.defer();
 
-    view.askFor("Search subtitles:", {
+    view.askFor("What subtitles to search? Type \"no\" to skip:", {
         defaultAnswer: torrent.title
     }).then(function(input) {
         return deferred.resolve({
             torrent: torrent,
-            subtitles: input
+            subtitles: input === "no" ? false : input
         });
     });
 
@@ -38,6 +43,7 @@ function waitForSubtitlesInput(torrent) {
 
 function fetchSubtitles(data) {
     var deferred = Q.defer();
+
     if (!data.subtitles) {
         return deferred.resolve(data);
     }

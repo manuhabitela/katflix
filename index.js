@@ -43,16 +43,9 @@ function help() {
 
 function start(searchTerms) {
     getTorrent(searchTerms || null)
-        .then(checkForSubtitles)
+        .then(getSubtitles)
         .then(playVideo)
         .catch(view.renderError);
-}
-
-function checkForSubtitles(data) {
-    if (args.subtitles) {
-        return getSubtitles(data.torrent);
-    }
-    return { torrent: torrent };
 }
 
 function playVideo(data) {
