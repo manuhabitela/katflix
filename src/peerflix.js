@@ -6,7 +6,7 @@ var defaults = require('lodash.defaults');
 var parseArgs = require('./parse-args.js');
 module.exports = {};
 
-module.exports.play = function play(url, peerflixArguments, options) {
+module.exports = function play(url, peerflixArguments, options) {
     var opts = parseOptions(options);
     var peerflixArgs = parsePeerflixArgs(peerflixArguments);
     peerflixArgs.unshift(url);

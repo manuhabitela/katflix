@@ -1,10 +1,10 @@
 var Q = require('q');
-var searchSubtitles = require('./search-subtitles.js');
-var view = require('./view.js');
+var subtitler = require('subtitler');
 var gunzip = require('gunzip-maybe');
 var fs = require('fs');
 var http = require('http');
 var os = require('os');
+var view = require('./view.js');
 
 module.exports = function subtitles(torrent) {
     var deferred = Q.defer();
@@ -24,7 +24,9 @@ module.exports = function subtitles(torrent) {
 function waitForSubtitlesInput(torrent) {
     var deferred = Q.defer();
 
-    askFor(torrent).then(function(input) {
+    view.askFor("Search subtitles:", {
+        defaultAnswer: torrent.title
+    }).then(function(input) {
         return deferred.resolve({
             torrent: torrent,
             subtitles: input
@@ -70,8 +72,20 @@ function downloadSubtitles(data) {
     return deferred.promise;
 }
 
-function askFor(torrent) {
-    return view.askFor("Search subtitles:", {
-        defaultAnswer: torrent.title
-    });
-}
+function searchSubtitles(title, language) {
+    var deferred = Q.defer();
+
+    subtitler.api.login().then(function(token) {
+        subtitler.api.searchForTitle(token, language || "fre", title).then(function(results) {
+            return {
+                token: token,
+                list: results
+            }
+        }).then(function(res) {
+            subtitler.api.logout(res.token);
+            return deferred.resolve(res.list);
+        })
+    })
+
+    return deferred.promise;
+};

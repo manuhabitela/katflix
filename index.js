@@ -1,9 +1,8 @@
-var searchTorrents = require('./src/search-torrents.js');
 var view = require('./src/view.js');
-var player = require('./src/peerflix.js');
+var playTorrent = require('./src/peerflix.js');
+var getTorrent = require('./src/torrent.js');
 var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
-var Q = require('q');
 
 var args = require('minimist')(process.argv.slice(2));
 args.peerflix = parseArgs.makeObject(args.peerflix || '');
@@ -43,30 +42,17 @@ function help() {
 }
 
 function start(searchTerms) {
-    var torrent = null;
-    var promise = searchTerms ? Q(searchTerms) : view.inputVideoSearchTerms();
-    promise
-        .then(searchTorrents)
-        .then(listTorrents)
-        .then(view.selectVideo)
-        .then(function(torrent) {
-            if (args.subtitles) {
-                return getSubtitles(torrent);
-            }
-            return { torrent: torrent };
-        })
+    getTorrent(searchTerms || null)
+        .then(checkForSubtitles)
         .then(playVideo)
         .catch(view.renderError);
 }
 
-function listTorrents(torrents) {
-    if (!torrents.length) {
-        view.renderWarning('No videos found.');
-        return start();
+function checkForSubtitles(data) {
+    if (args.subtitles) {
+        return getSubtitles(data.torrent);
     }
-
-    view.renderTorrents(torrents);
-    return torrents;
+    return { torrent: torrent };
 }
 
 function playVideo(data) {
@@ -75,5 +61,5 @@ function playVideo(data) {
         options.subtitles = data.subtitles;
     }
 
-    player.play(data.torrent.torrentLink, options);
+    playTorrent(data.torrent.torrentLink, options);
 }
