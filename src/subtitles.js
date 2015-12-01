@@ -1,93 +1,97 @@
-var os = require('os');
-var path = require('path');
+var Q = require('q');
+var subtitler = require('subtitler');
+var gunzip = require('gunzip-maybe');
 var fs = require('fs');
-var spawnSync = require('child_process').spawnSync;
-var execSync = require('child_process').execSync;
-var defaults = require('lodash.defaults');
-var parseArgs = require('./parse-args.js');
+var http = require('http');
+var os = require('os');
+var view = require('./view.js');
 
-module.exports = function getSubtitles(torrentName, subliminalArguments, options) {
-    if (!subliminalArguments.language) {
-        return false;
-    }
+module.exports = function subtitles(originalData) {
+    var deferred = Q.defer();
 
-    var opts = parseOptions(options);
-    var subliminalArgs = parseSubliminalArgs(subliminalArguments);
+    waitForSubtitlesInput(originalData.torrent)
+        .then(function(dataAfterInput) {
+            if (!dataAfterInput.subtitles) {
+                return deferred.resolve(originalData);
+            }
+            return fetchSubtitles(dataAfterInput);
+        })
+        .then(view.renderSubtitles)
+        .then(view.selectSubtitles)
+        .then(downloadSubtitles)
+        .then(function(finalData) {
+            return deferred.resolve(finalData);
+        });
 
-    console.log("Trying to download subtitles...");
-
-    if (!downloadSubtitlesFile(torrentName, subliminalArgs, opts)) {
-        return '';
-    }
-
-    var subtitlesFile = renameFileWithoutSpaces(retrieveSubtitlesFile(opts.tmpDir));
-
-    console.log(subtitlesFile.length ?
-        "Found (hopefully) matching subtitles: " + subtitlesFile :
-        "Didn't find any matching subtitles."
-    );
-
-    return subtitlesFile;
+    return deferred.promise;
 };
 
-function parseOptions(options) {
-    return defaults(options || {}, {
-        tmpDir: os.tmpdir(),
-        bin: "subliminal"
+function waitForSubtitlesInput(torrent) {
+    var deferred = Q.defer();
+
+    view.askFor("What subtitles to search? Type \"no\" to skip:", {
+        defaultAnswer: torrent.title
+    }).then(function(input) {
+        return deferred.resolve({
+            torrent: torrent,
+            subtitles: input === "no" ? false : input
+        });
     });
+
+    return deferred.promise;
 }
 
-function parseSubliminalArgs(options) {
-    var subliminalArguments = parseArgs.makeArray(options);
-    subliminalArguments.push('-s');
-    return subliminalArguments;
-}
+function fetchSubtitles(data) {
+    var deferred = Q.defer();
 
-function downloadSubtitlesFile(torrentName, subliminalArguments, options) {
-    var opts = parseOptions(options);
-    subliminalArguments.unshift('download');
-    subliminalArguments.push(torrentName);
-    try {
-        spawnSync(opts.bin, subliminalArguments, { cwd: opts.tmpDir, stdio: 'inherit' });
-    } catch (e) {
-        console.log("Error when executing subliminal: " + e.message);
-        return false;
+    if (!data.subtitles) {
+        return deferred.resolve(data);
     }
-    return true;
+
+    searchSubtitles(data.subtitles).then(function(results) {
+        return deferred.resolve({
+            torrent: data.torrent,
+            subtitles: results
+        });
+    });
+
+    return deferred.promise;
 }
 
-function retrieveSubtitlesFile(dir) {
-    //we assume the file created by subliminal is the last .srt file in the given dir
-    //we get all the srt files in the temp dir and keep the last created
-    //we might need to do better than this... but I find no sure way of getting the
-    //specific file created by subliminal directly
-    var files;
-    try {
-        files = execSync('ls -1At *.srt', { cwd: dir, encoding: 'utf8' }).trim();
-    } catch (e) {
-        console.log("Error when trying to retrieve subtitle file: " + e.message);
-        return '';
-    }
-    files = files.split('\n'); //each file is on its own line (-1 option of ls) so we split by newline
-    var filename = files[0]; //ls is ordered by modification time (-i option) so we get the first file of list
-    return path.join(dir, filename);
+function downloadSubtitles(data) {
+    var deferred = Q.defer();
+
+    var url = data.subtitles.SubDownloadLink;
+    http.get(url, function(res) {
+        var filename = os.tmpdir() + '/katflix-subtitle.srt';
+        var output = fs.createWriteStream(filename);
+        var uncompress = gunzip();
+        output.on('close', function() {
+            deferred.resolve({
+                torrent: data.torrent,
+                subtitles: filename
+            });
+        });
+        res.pipe(uncompress).pipe(output);
+    });
+
+    return deferred.promise;
 }
 
-/**
- * seems the raspberry pi node have some trouble with spaces in spawn
- *
- * let's bypass this!
- */
-function renameFileWithoutSpaces(sourcePath) {
-    if (!sourcePath) {
-        return '';
-    }
-    var filename = path.basename(sourcePath);
-    var dirname = path.dirname(sourcePath);
-    var newPath = path.join(dirname, filename.replace(/\s/g, '_'));
-    fs.renameSync(
-        sourcePath,
-        newPath
-    );
-    return newPath;
-}
+function searchSubtitles(title, language) {
+    var deferred = Q.defer();
+
+    subtitler.api.login().then(function(token) {
+        subtitler.api.searchForTitle(token, language || "fre", title).then(function(results) {
+            return {
+                token: token,
+                list: results
+            }
+        }).then(function(res) {
+            subtitler.api.logout(res.token);
+            return deferred.resolve(res.list);
+        })
+    })
+
+    return deferred.promise;
+};

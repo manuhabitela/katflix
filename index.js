@@ -1,13 +1,11 @@
-var search = require('./src/search.js');
 var view = require('./src/view.js');
-var player = require('./src/peerflix.js');
+var playTorrent = require('./src/peerflix.js');
+var getTorrent = require('./src/torrent.js');
 var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
-var Q = require('q');
 
 var args = require('minimist')(process.argv.slice(2));
 args.peerflix = parseArgs.makeObject(args.peerflix || '');
-args.subliminal = parseArgs.makeObject(args.subliminal || '');
 
 if (args.version || args.v) {
     return view.renderMessage(version());
@@ -25,8 +23,7 @@ function version() {
 
 function help() {
     return [
-        'Search videos from kickasstorrents, watch them directly thanks to peerflix,',
-        'with subtitles downloaded through subliminal.',
+        'Search videos from kickasstorrents, watch them directly thanks to peerflix.',
         '',
         'Usage: katflix [OPTIONS] [QUERY]',
         '',
@@ -37,42 +34,25 @@ function help() {
         '  --help: this message',
         '  --version: katflix\'s version',
         '  --peerflix: options to pass to the peerflix executable',
-        '  --subliminal: options to pass to the subliminal executable',
         '',
         'Examples:',
-        '  `katflix --peerflix="--vlc" --subliminal="--language fr"`',
-        '  `katflix --peerflix="--omx" Drive`',
-        '',
-        'The subliminal/language option is required if you want subtitles.'
+        '  `katflix --peerflix="--vlc"`',
+        '  `katflix --peerflix="--omx" Drive`'
     ].join('\n');
 }
 
 function start(searchTerms) {
-    var waitForQuery = searchTerms ? Q(searchTerms) : view.inputSearchTerms();
-    waitForQuery
-        .then(search)
-        .then(listTorrents, view.renderError);
+    getTorrent(searchTerms || null)
+        .then(getSubtitles)
+        .then(playVideo)
+        .catch(view.renderError);
 }
 
-function listTorrents(torrents) {
-    if (!torrents.length) {
-        view.renderWarning('No videos found.');
-        return start();
-    }
-
-    view.renderTorrents(torrents);
-    view.selectVideo(torrents).then(
-        playVideo
-    );
-}
-
-function playVideo(torrent) {
-    var subtitles = getSubtitles(torrent.title, args.subliminal);
+function playVideo(data) {
     var options = args.peerflix;
-
-    if (subtitles) {
-        options.subtitles = subtitles;
+    if (data.subtitles) {
+        options.subtitles = data.subtitles;
     }
 
-    player.play(torrent.torrentLink, options);
+    playTorrent(data.torrent.torrentLink, options);
 }
