@@ -16,8 +16,8 @@ module.exports = function subtitles(originalData) {
             }
             return fetchSubtitles(dataAfterInput);
         })
-        .then(view.renderSubtitles)
-        .then(view.selectSubtitles)
+        .then(listSubtitles)
+        .then(selectSubtitles)
         .then(downloadSubtitles)
         .then(function(finalData) {
             return deferred.resolve(finalData);
@@ -86,12 +86,33 @@ function searchSubtitles(title, language) {
             return {
                 token: token,
                 list: results
-            }
+            };
         }).then(function(res) {
             subtitler.api.logout(res.token);
             return deferred.resolve(res.list);
-        })
-    })
+        });
+    });
 
     return deferred.promise;
-};
+}
+
+function listSubtitles(data) {
+    view.renderList(data.subtitles, renderSubtitlesLine);
+    return data;
+}
+
+function renderSubtitlesLine(subtitle) {
+    var title = view.colors.cyan(subtitle.SubFileName);
+    var lang = view.colors.yellow(subtitle.SubLanguageID);
+    return [title, lang].join( view.colors.gray(" - ") );
+}
+
+function selectSubtitles(data) {
+    var deferred = Q.defer();
+
+    view.selectItem(data.subtitles, "What subtitles to use?").then(function(item) {
+        return deferred.resolve({ torrent: data.torrent, subtitles: item });
+    });
+
+    return deferred.promise;
+}

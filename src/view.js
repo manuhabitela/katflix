@@ -1,11 +1,8 @@
 var chalk = require('chalk');
 var inquirer = require('inquirer');
 var Q = require('q');
-module.exports = {};
 
-module.exports.inputVideoSearchTerms = function inputSearchTerms() {
-    return module.exports.askFor("Search for:");
-};
+module.exports = {};
 
 module.exports.askFor = function askFor(message, opts) {
     opts = opts || {};
@@ -24,57 +21,16 @@ module.exports.askFor = function askFor(message, opts) {
     return deferred.promise;
 };
 
-module.exports.renderTorrents = function renderTorrents(torrentsList) {
+module.exports.renderList = function renderList(data, itemRenderCallback) {
     console.log(
-        torrentsList.map(function(torrent, n) {
-            return lineNumber(n+1) + ' ' + torrentListItem(torrent);
-        }).join('\n')
-    );
-};
-
-module.exports.renderSubtitles = function renderSubtitles(data) {
-    var subtitlesList = data.subtitles;
-    console.log(
-        subtitlesList.map(function(subtitle, n) {
-            return lineNumber(n+1) + ' ' + subtitleListItem(subtitle);
+        data.map(function(item, n) {
+            return lineNumber(n+1) + ' ' + itemRenderCallback(item);
         }).join('\n')
     );
     return data;
 };
 
-function lineNumber(index) {
-    index = index > 9 ? index : ' ' + index;
-    return chalk.dim.magenta.bold(index);
-}
-
-function torrentListItem(torrent) {
-    var title = chalk.yellow.bold(torrent.title);
-    var size = chalk.cyan(torrent.readableSize);
-    var seeds = chalk.green(torrent.seeds);
-    var leechs = chalk.red(torrent.leechs);
-    return [title, size, seeds + '/' + leechs].join( chalk.gray(" - ") );
-}
-
-function subtitleListItem(subtitle) {
-    var title = chalk.cyan(subtitle.SubFileName);
-    var lang = chalk.yellow(subtitle.SubLanguageID);
-    return [title, lang].join( chalk.gray(" - ") );
-}
-
-module.exports.selectVideo = function selectVideo(torrents) {
-    return selectItem(torrents, "What do you want to watch?");
-};
-
-module.exports.selectSubtitles = function selectSubtitles(data) {
-    var deferred = Q.defer();
-    selectItem(data.subtitles, "What subtitles to use?").then(function(item) {
-        return deferred.resolve({ torrent: data.torrent, subtitles: item });
-    });
-
-    return deferred.promise;
-};
-
-function selectItem(list, message) {
+module.exports.selectItem = function selectItem(list, message) {
     var deferred = Q.defer();
 
     inquirer.prompt([{
@@ -92,7 +48,7 @@ function selectItem(list, message) {
     });
 
     return deferred.promise;
-}
+};
 
 module.exports.renderWarning = function renderWarning(message) {
     console.log(chalk.yellow.bold(message));
@@ -105,3 +61,10 @@ module.exports.renderError = function renderError(message) {
 module.exports.renderMessage = function renderMessage(message) {
     console.log(message);
 };
+
+module.exports.colors = chalk;
+
+function lineNumber(index) {
+    index = index > 9 ? index : ' ' + index;
+    return chalk.dim.magenta.bold(index);
+}
