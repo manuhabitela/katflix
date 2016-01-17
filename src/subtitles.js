@@ -1,24 +1,27 @@
 var Q = require('q');
-var subtitler = require('subtitler');
+var osApi = require('subtitler').api;
+var a7Api = require('addic7ed-api');
 var gunzip = require('gunzip-maybe');
 var fs = require('fs');
 var http = require('http');
 var os = require('os');
 var view = require('./view.js');
 
-module.exports = function subtitles(torrent, languages) {
+module.exports = function subtitles(searchSuggestion, languages, mode) {
     var deferred = Q.defer();
 
-    waitForSubtitlesInput(torrent)
+    waitForSubtitlesInput(searchSuggestion)
         .then(function(subtitlesTerms) {
             if (!subtitlesTerms) {
                 deferred.resolve(false);
             }
-            return fetchSubtitles(subtitlesTerms, languages);
+            return searchSubtitles(subtitlesTerms, languages, mode);
         })
         .then(listSubtitles)
         .then(selectSubtitles)
-        .then(downloadSubtitles)
+        .then(function(selection) {
+            return downloadSubtitles(selection, mode);
+        })
         .then(function(subtitlesFile) {
             deferred.resolve(subtitlesFile);
         });
@@ -26,10 +29,14 @@ module.exports = function subtitles(torrent, languages) {
     return deferred.promise;
 };
 
-function waitForSubtitlesInput(torrent) {
+function waitForSubtitlesInput(searchSuggestion, mode) {
     var deferred = Q.defer();
-    view.askFor("What subtitles to search? Type \"no\" to skip:", {
-        defaultAnswer: torrent
+    var question = "What subtitles to search?";
+    if (mode === 'series') {
+        question += " Format: Series SxxExx.";
+    }
+    view.askFor(question + " Type \"no\" to skip:", {
+        defaultAnswer: searchSuggestion
     }).then(function(input) {
         deferred.resolve(input === "no" ? false : input);
     });
@@ -37,55 +44,88 @@ function waitForSubtitlesInput(torrent) {
     return deferred.promise;
 }
 
-function fetchSubtitles(query, languages) {
-    var deferred = Q.defer();
-    if (!query) {
-        deferred.resolve([]);
+function searchSubtitles(query, languages, mode) {
+    if (mode === 'series') {
+        return searchSeriesSubtitles(query, languages);
     }
-
-    searchSubtitles(query, languages).then(function(results) {
-        deferred.resolve(results);
-    });
-
-    return deferred.promise;
+    return searchNormalSubtitles(query, languages);
 }
 
-function searchSubtitles(title, languages) {
+function searchNormalSubtitles(query, languages) {
     var deferred = Q.defer();
     var token;
-    subtitler.api.login().then(function(apiToken) {
+    opensubs.api.login().then(function(apiToken) {
         token = apiToken;
-        return multipleLanguagesSearch(title, languages, token);
+        return multipleLanguagesSearch(query, languages, token);
     }).then(function(allSubtitles) {
-        subtitler.api.logout(token);
-        deferred.resolve(allSubtitles);
+        opensubs.api.logout(token);
+        deferred.resolve(normalizeSubtitles(allSubtitles));
     });
-
     return deferred.promise;
-}
 
-function multipleLanguagesSearch(title, languages, token) {
-    var deferred = Q.defer();
+    function multipleLanguagesSearch(query, languages, token) {
+        var deferred = Q.defer();
 
-    Q.all(languages.map(function(lang) {
-        return singleLanguageSearch(title, lang, token);
-    })).done(function(lists) {
-        var allSubtitles = [];
-        lists.forEach(function(list) {
-            allSubtitles = allSubtitles.concat(list);
+        Q.all(languages.map(function(lang) {
+            return singleLanguageSearch(query, lang, token);
+        })).done(function(lists) {
+            var allSubtitles = [];
+            lists.forEach(function(list) {
+                allSubtitles = allSubtitles.concat(list);
+            });
+            deferred.resolve(allSubtitles);
+        })
+
+        return deferred.promise;
+    }
+
+    function singleLanguageSearch(query, language, token) {
+        var deferred = Q.defer();
+        opensubs.api.searchForTitle(token, language, query).then(function(results) {
+            deferred.resolve(results);
         });
-        deferred.resolve(allSubtitles);
-    })
+        return deferred.promise;
+    }
+}
 
+function searchSeriesSubtitles(query, languages) {
+    var deferred = Q.defer();
+    var info = extractQueryInfo(query);
+    a7Api.search(info.series, info.season, info.episode, languages).then(function(results) {
+        var normalizedResults = results.map(function(sub) {
+            sub.name = query;
+            return sub;
+        })
+        deferred.resolve(normalizeSubtitles(results));
+    });
     return deferred.promise;
 }
 
-function singleLanguageSearch(title, language, token) {
-    var deferred = Q.defer();
-    subtitler.api.searchForTitle(token, language, title).then(function(results) {
-        deferred.resolve(results);
-    });
-    return deferred.promise;
+function extractQueryInfo(query) {
+    var regex = / (S(\d+)E(\d+))/;
+    var matches = query.match(regex);
+    if (!matches) {
+        throw "Can't get episode info. Be sure to respect the format (like 'The Shield S01E01').";
+    }
+    var episodeInfoPosition = query.indexOf(matches[0]);
+    var seriesName = query.slice(0, episodeInfoPosition);
+    return {
+        series: seriesName,
+        season: matches[1],
+        episode: matches[2]
+    };
+}
+
+function normalizeSubtitles(subtitles) {
+    function normalizeOneSub(sub) {
+        subtitles.name = subtitles.SubFileName || subtitles.name;
+        subtitles.language = subtitles.SubLanguageID || subtitles.langId;
+        return sub;
+    }
+    if (Array.isArray(subtitles)) {
+        return subtitles.map(normalizeOneSub);
+    }
+    return normalizeOneSub(subtitles);
 }
 
 function listSubtitles(subtitlesList) {
@@ -94,8 +134,8 @@ function listSubtitles(subtitlesList) {
 }
 
 function renderSubtitlesLine(subtitle) {
-    var title = view.colors.cyan(subtitle.SubFileName);
-    var lang = view.colors.yellow(subtitle.SubLanguageID);
+    var title = view.colors.cyan(subtitle.name);
+    var lang = view.colors.yellow(subtitle.language);
     return [title, lang].join( view.colors.gray(" - ") );
 }
 
@@ -109,18 +149,33 @@ function selectSubtitles(subtitlesList) {
     return deferred.promise;
 }
 
-function downloadSubtitles(subtitles) {
+function downloadSubtitles(subtitles, mode) {
+    var destination = os.tmpdir() + '/katflix-subtitle.srt';
+    if (mode === 'series') {
+        return downloadSeriesSubtitles(subtitles, destination);
+    }
+    return downloadNormalSubtitles(subtitles, destination);
+}
+
+function downloadNormalSubtitles(source, destination) {
     var deferred = Q.defer();
-    var url = subtitles.SubDownloadLink;
+    var url = source.SubDownloadLink;
     http.get(url, function(res) {
-        var filename = os.tmpdir() + '/katflix-subtitle.srt';
-        var output = fs.createWriteStream(filename);
+        var output = fs.createWriteStream(destination);
         var uncompress = gunzip();
         output.on('close', function() {
-            deferred.resolve(filename);
+            deferred.resolve(destination);
         });
         res.pipe(uncompress).pipe(output);
     });
 
+    return deferred.promise;
+}
+
+function downloadSeriesSubtitles(source, destination) {
+    var deferred = Q.defer();
+    a7Api.download(source, destination).then(function() {
+        deferred.resolve(destination);
+    });
     return deferred.promise;
 }

@@ -15,6 +15,7 @@ if (args.help) {
     return view.renderMessage(help());
 }
 
+// return getSubtitles('Daredevil S01E12', ['eng'], 'normal');
 return start(args);
 
 function version() {
@@ -35,6 +36,8 @@ function help() {
         '  -v, --version: show katflix\'s version',
         '  -l, --language: set desired subtitles language to search (defaults to \'eng\')',
         '                  you can pass this option multiple times',
+        '  -s, --series: activate series mode',
+        '                subtitles will be searched on addic7ed instead of opensubtitles',
         '',
         'You can pass options to the peerflix binary internally used after --.',
         'Check out the peerflix github page for more details on possible options.',
@@ -51,9 +54,13 @@ function help() {
 function start(options) {
     var torrent;
     getTorrent(options.query)
-        .then(function(selectedTorrent) {
+        .then(function(selectedTorrent, query) {
             torrent = selectedTorrent;
-            return getSubtitles(torrent.title, options.language);
+            return getSubtitles(
+                options.series ? query : torrent.title,
+                options.language,
+                options.series ? 'series' : 'normal'
+            );
         })
         .then(function(subtitles) {
             return playVideo({
@@ -73,7 +80,8 @@ function playVideo(data, options) {
 
 function normalizeArgs() {
     var args = minimist(process.argv.slice(2), {
-        alias: { p: 'peerflix', l: 'language', v: 'version', h: 'help' },
+        alias: { p: 'peerflix', l: 'language', v: 'version', h: 'help', s: 'series' },
+        boolean: ['series'],
         default: { language: ['eng'] },
         '--': true
     });

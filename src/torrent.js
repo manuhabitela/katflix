@@ -14,7 +14,7 @@ module.exports = function torrent(query) {
             return selectTorrent(torrents);
         })
         .then(function(torrent) {
-            deferred.resolve(torrent);
+            deferred.resolve(torrent, query);
         });
 
     return deferred.promise;
