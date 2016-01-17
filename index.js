@@ -1,6 +1,7 @@
 var view = require('./src/view.js');
 var playTorrent = require('./src/peerflix.js');
-var getTorrent = require('./src/torrent.js');
+var getTorrent = require('./src/torrent.js').torrent;
+var getInitialQuery = require('./src/torrent.js').query;
 var getSubtitles = require('./src/subtitles.js');
 var parseArgs = require('./src/parse-args.js');
 var minimist = require('minimist');
@@ -15,7 +16,6 @@ if (args.help) {
     return view.renderMessage(help());
 }
 
-// return getSubtitles('Daredevil S01E12', ['eng'], 'normal');
 return start(args);
 
 function version() {
@@ -45,16 +45,23 @@ function help() {
         'Examples:',
         '  `katflix -- --vlc` # autoplay the video in vlc',
         '  `katflix Drive` # directly list \'Drive\' results',
-        '  `katflix --language spa # search spanish subtitles only',
-        '  `katflix -l fre -l eng # search english and french subtitles only',
-        '  `katflix -- --omx -- -o local # autoplay in omx with local audio'
+        '  `katflix --language spa` # search spanish subtitles only',
+        '  `katflix -l fre -l eng` # search english and french subtitles only',
+        '  `katflix "Daredevil S01E01" --series --language fre` # search for Daredevil',
+        '    first episode with french subtitles from addic7ed',
+        '  `katflix -- --omx -- -o local` # autoplay in omx with local audio'
     ].join('\n');
 }
 
 function start(options) {
-    var torrent;
-    getTorrent(options.query)
-        .then(function(selectedTorrent, query) {
+    var torrent, query;
+    getInitialQuery(options.query)
+        .then(function(res) {
+            query = res;
+            return query;
+        })
+        .then(getTorrent)
+        .then(function(selectedTorrent) {
             torrent = selectedTorrent;
             return getSubtitles(
                 options.series ? query : torrent.title,

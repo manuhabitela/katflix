@@ -3,22 +3,25 @@ var Q = require('q');
 var view = require('./view.js');
 var readableSize = require('./readable-size.js');
 
-module.exports = function torrent(query) {
+module.exports.torrent = function torrent(query) {
     var deferred = Q.defer();
     var torrents, torrent;
-    (query ? Q(query) : waitForTorrentInput())
-        .then(searchTorrents)
+    searchTorrents(query)
         .then(listTorrents)
         .then(function(searchResults) {
             torrents = searchResults;
             return selectTorrent(torrents);
         })
         .then(function(torrent) {
-            deferred.resolve(torrent, query);
+            deferred.resolve(torrent);
         });
 
     return deferred.promise;
 };
+
+module.exports.query = function query(optionalQuery) {
+    return optionalQuery ? Q(optionalQuery) : waitForTorrentInput();
+}
 
 function searchTorrents(query) {
     var deferred = Q.defer();

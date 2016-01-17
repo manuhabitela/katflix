@@ -10,7 +10,7 @@ var view = require('./view.js');
 module.exports = function subtitles(searchSuggestion, languages, mode) {
     var deferred = Q.defer();
 
-    waitForSubtitlesInput(searchSuggestion)
+    waitForSubtitlesInput(searchSuggestion, mode)
         .then(function(subtitlesTerms) {
             if (!subtitlesTerms) {
                 deferred.resolve(false);
@@ -54,11 +54,11 @@ function searchSubtitles(query, languages, mode) {
 function searchNormalSubtitles(query, languages) {
     var deferred = Q.defer();
     var token;
-    opensubs.api.login().then(function(apiToken) {
+    osApi.login().then(function(apiToken) {
         token = apiToken;
         return multipleLanguagesSearch(query, languages, token);
     }).then(function(allSubtitles) {
-        opensubs.api.logout(token);
+        osApi.logout(token);
         deferred.resolve(normalizeSubtitles(allSubtitles));
     });
     return deferred.promise;
@@ -81,7 +81,7 @@ function searchNormalSubtitles(query, languages) {
 
     function singleLanguageSearch(query, language, token) {
         var deferred = Q.defer();
-        opensubs.api.searchForTitle(token, language, query).then(function(results) {
+        osApi.searchForTitle(token, language, query).then(function(results) {
             deferred.resolve(results);
         });
         return deferred.promise;
@@ -92,17 +92,17 @@ function searchSeriesSubtitles(query, languages) {
     var deferred = Q.defer();
     var info = extractQueryInfo(query);
     a7Api.search(info.series, info.season, info.episode, languages).then(function(results) {
-        var normalizedResults = results.map(function(sub) {
-            sub.name = query;
+        var subs = results.map(function(sub) {
+            sub.name = [query, sub.distribution, sub.team, sub.version].join(' ');
             return sub;
         })
-        deferred.resolve(normalizeSubtitles(results));
+        deferred.resolve(normalizeSubtitles(subs));
     });
     return deferred.promise;
 }
 
 function extractQueryInfo(query) {
-    var regex = / (S(\d+)E(\d+))/;
+    var regex = / S(\d+)E(\d+)/;
     var matches = query.match(regex);
     if (!matches) {
         throw "Can't get episode info. Be sure to respect the format (like 'The Shield S01E01').";
@@ -118,8 +118,8 @@ function extractQueryInfo(query) {
 
 function normalizeSubtitles(subtitles) {
     function normalizeOneSub(sub) {
-        subtitles.name = subtitles.SubFileName || subtitles.name;
-        subtitles.language = subtitles.SubLanguageID || subtitles.langId;
+        sub.name = sub.SubFileName || sub.name;
+        sub.language = sub.SubLanguageID || sub.langId;
         return sub;
     }
     if (Array.isArray(subtitles)) {

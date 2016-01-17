@@ -13,6 +13,7 @@
     "katflix": "bin/katflix"
   },
   "dependencies": {
+    "addic7ed-api": "^1.2.0",
     "bin-path": "0.0.3",
     "chalk": "^1.1.0",
     "gunzip-maybe": "^1.2.1",

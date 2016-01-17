@@ -8,6 +8,7 @@ Main differences are:
 * only search torrents from kickasstorrents
 * allows to search subtitles in multiples languages at once
 * explicitly search for subtitles instead of trying to get the correct one automatically
+* choose where to search subtitles: opensubtitles or addic7ed
 * omxplayer keyboard shortcuts work with katflix (thanks to forked version of peerflix)
 
 
@@ -38,16 +39,21 @@ Options:
   -v, --version: show katflix's version
   -l, --language: set desired subtitles language to search (defaults to 'eng')
                   you can pass this option multiple times
+  -s, --series: activate series mode
+                subtitles will be searched on addic7ed instead of opensubtitles
 
 You can pass options to the peerflix binary internally used after --.
 Check out the peerflix github page for more details on possible options.
 
 Examples:
-  `katflix -- --vlc` # autoplay the video in vlc (peerflix argument)
+  `katflix -- --vlc` # autoplay the video in vlc
   `katflix Drive` # directly list 'Drive' results
-  `katflix --language spa # search spanish subtitles only
-  `katflix -l fre -l eng # search english and french subtitles only
-  `katflix -- --omx -- -o local # autoplay in omx with local audio (peerflix + player arguments)
+  `katflix --language spa` # search spanish subtitles only
+  `katflix -l fre -l eng` # search english and french subtitles only
+  `katflix "Daredevil S01E01" --series --language fre` # search for Daredevil
+    first episode with french subtitles from addic7ed
+  `katflix -- --omx -- -o local` # autoplay in omx with local audio
+
 ```
 
 ### Protips
