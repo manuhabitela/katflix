@@ -6,21 +6,21 @@ var http = require('http');
 var os = require('os');
 var view = require('./view.js');
 
-module.exports = function subtitles(originalData) {
+module.exports = function subtitles(torrent, languages) {
     var deferred = Q.defer();
 
-    waitForSubtitlesInput(originalData.torrent)
-        .then(function(dataAfterInput) {
-            if (!dataAfterInput.subtitles) {
-                return deferred.resolve(originalData);
+    waitForSubtitlesInput(torrent)
+        .then(function(subtitlesTerms) {
+            if (!subtitlesTerms) {
+                deferred.resolve(false);
             }
-            return fetchSubtitles(dataAfterInput);
+            return fetchSubtitles(subtitlesTerms, languages);
         })
         .then(listSubtitles)
         .then(selectSubtitles)
         .then(downloadSubtitles)
-        .then(function(finalData) {
-            return deferred.resolve(finalData);
+        .then(function(subtitlesFile) {
+            deferred.resolve(subtitlesFile);
         });
 
     return deferred.promise;
@@ -28,77 +28,69 @@ module.exports = function subtitles(originalData) {
 
 function waitForSubtitlesInput(torrent) {
     var deferred = Q.defer();
-
     view.askFor("What subtitles to search? Type \"no\" to skip:", {
-        defaultAnswer: torrent.title
+        defaultAnswer: torrent
     }).then(function(input) {
-        return deferred.resolve({
-            torrent: torrent,
-            subtitles: input === "no" ? false : input
-        });
+        deferred.resolve(input === "no" ? false : input);
     });
 
     return deferred.promise;
 }
 
-function fetchSubtitles(data) {
+function fetchSubtitles(query, languages) {
     var deferred = Q.defer();
-
-    if (!data.subtitles) {
-        return deferred.resolve(data);
+    if (!query) {
+        deferred.resolve([]);
     }
 
-    searchSubtitles(data.subtitles).then(function(results) {
-        return deferred.resolve({
-            torrent: data.torrent,
-            subtitles: results
-        });
+    searchSubtitles(query, languages).then(function(results) {
+        deferred.resolve(results);
     });
 
     return deferred.promise;
 }
 
-function downloadSubtitles(data) {
+function searchSubtitles(title, languages) {
+    var deferred = Q.defer();
+    var token;
+    subtitler.api.login().then(function(apiToken) {
+        token = apiToken;
+        return multipleLanguagesSearch(title, languages, token);
+    }).then(function(allSubtitles) {
+        subtitler.api.logout(token);
+        deferred.resolve(allSubtitles);
+    });
+
+    return deferred.promise;
+}
+
+function multipleLanguagesSearch(title, languages, token) {
     var deferred = Q.defer();
 
-    var url = data.subtitles.SubDownloadLink;
-    http.get(url, function(res) {
-        var filename = os.tmpdir() + '/katflix-subtitle.srt';
-        var output = fs.createWriteStream(filename);
-        var uncompress = gunzip();
-        output.on('close', function() {
-            deferred.resolve({
-                torrent: data.torrent,
-                subtitles: filename
-            });
+    Q.all(languages.map(function(lang) {
+        return singleLanguageSearch(title, lang, token);
+    })).done(function(lists) {
+        var allSubtitles = [];
+        lists.forEach(function(list) {
+            allSubtitles = allSubtitles.concat(list);
         });
-        res.pipe(uncompress).pipe(output);
-    });
+        deferred.resolve(allSubtitles);
+    })
 
     return deferred.promise;
 }
 
-function searchSubtitles(title, language) {
+function singleLanguageSearch(title, language, token) {
     var deferred = Q.defer();
-
-    subtitler.api.login().then(function(token) {
-        subtitler.api.searchForTitle(token, language || "fre", title).then(function(results) {
-            return {
-                token: token,
-                list: results
-            };
-        }).then(function(res) {
-            subtitler.api.logout(res.token);
-            return deferred.resolve(res.list);
-        });
+    subtitler.api.searchForTitle(token, language, title).then(function(results) {
+        deferred.resolve(results);
     });
-
     return deferred.promise;
 }
 
-function listSubtitles(data) {
-    view.renderList(data.subtitles, renderSubtitlesLine);
-    return data;
+function listSubtitles(subtitlesList) {
+    view.renderList(subtitlesList, renderSubtitlesLine);
+    return subtitlesList;
 }
 
 function renderSubtitlesLine(subtitle) {
@@ -107,11 +99,27 @@ function renderSubtitlesLine(subtitle) {
     return [title, lang].join( view.colors.gray(" - ") );
 }
 
-function selectSubtitles(data) {
+function selectSubtitles(subtitlesList) {
     var deferred = Q.defer();
 
-    view.selectItem(data.subtitles, "What subtitles to use?").then(function(item) {
-        return deferred.resolve({ torrent: data.torrent, subtitles: item });
+    view.selectItem(subtitlesList, "What subtitles to use?").then(function(item) {
+        deferred.resolve(item);
+    });
+
+    return deferred.promise;
+}
+
+function downloadSubtitles(subtitles) {
+    var deferred = Q.defer();
+    var url = subtitles.SubDownloadLink;
+    http.get(url, function(res) {
+        var filename = os.tmpdir() + '/katflix-subtitle.srt';
+        var output = fs.createWriteStream(filename);
+        var uncompress = gunzip();
+        output.on('close', function() {
+            deferred.resolve(filename);
+        });
+        res.pipe(uncompress).pipe(output);
     });
 
     return deferred.promise;

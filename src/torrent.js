@@ -5,13 +5,16 @@ var readableSize = require('./readable-size.js');
 
 module.exports = function torrent(query) {
     var deferred = Q.defer();
-
+    var torrents, torrent;
     (query ? Q(query) : waitForTorrentInput())
         .then(searchTorrents)
         .then(listTorrents)
-        .then(selectTorrent)
+        .then(function(searchResults) {
+            torrents = searchResults;
+            return selectTorrent(torrents);
+        })
         .then(function(torrent) {
-            deferred.resolve({ torrent: torrent });
+            deferred.resolve(torrent);
         });
 
     return deferred.promise;
@@ -58,7 +61,11 @@ function renderTorrentLine(torrent) {
 }
 
 function selectTorrent(torrents) {
-    return view.selectItem(torrents, "What do you want to watch?");
+    var deferred = Q.defer();
+    view.selectItem(torrents, "What do you want to watch?").then(function(item) {
+        deferred.resolve(item);
+    });
+    return deferred.promise;
 }
 
 function waitForTorrentInput() {
